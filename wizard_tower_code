@@ -1,0 +1,93 @@
+#include <FastLED.h>
+
+// How many leds in your strip?
+#define NUM_LEDS 5
+
+// For led chips like Neopixels, which have a data line, ground, and power, you just
+// need to define DATA_PIN.  For led chipsets that are SPI based (four wires - data, clock,
+// ground, and power), like the LPD8806, define both DATA_PIN and CLOCK_PIN
+#define DATA_PIN 7
+int clk = 2;
+int dat = 5;
+int sw = 3;
+volatile uint8_t hue;
+volatile bool on;
+//#define CLOCK_PIN 13
+
+// Define the array of leds
+CRGB leds[NUM_LEDS];
+
+void setup() { 
+  Serial.begin(57600);
+  on = 1;
+  hue = 0;
+   pinMode(clk, INPUT); 
+  digitalWrite(clk, HIGH);  // Pull High Restance  
+  pinMode(dat, INPUT); 
+  digitalWrite(dat, HIGH);  // Pull High Restance 
+pinMode(sw, INPUT); 
+  digitalWrite(sw, HIGH);  // Pull High Restance
+  // pinMode(ON_PIN, INPUT); 
+  // digitalWrite(ON_PIN, HIGH);
+attachInterrupt(digitalPinToInterrupt(clk), isr1, FALLING);
+attachInterrupt(digitalPinToInterrupt(sw), isr2, FALLING);
+
+  Serial.println("resetting");
+  FastLED.addLeds<WS2812,DATA_PIN,RGB>(leds,NUM_LEDS);
+  FastLED.setBrightness(84);
+}
+
+void fadeall() { for(int i = 0; i < NUM_LEDS; i++) { leds[i].nscale8(250); } }
+
+void loop() { 
+  if (on){
+     for (int i=0; i<NUM_LEDS; i++){
+    leds[i] = CHSV(hue, 255, 255);
+  }
+    // Show the leds
+    FastLED.show(); 
+    // now that we've shown the leds, reset the i'th led to black
+    // leds[i] = CRGB::Black;
+   // fadeall();
+    // Wait a little bit before we loop around and do it again
+    delay(10);
+  } else {
+     for (int i=0; i<NUM_LEDS; i++){
+    leds[i] = CRGB::Black;
+  }
+    // Show the leds
+    FastLED.show(); 
+    // now that we've shown the leds, reset the i'th led to black
+    // leds[i] = CRGB::Black;
+   // fadeall();
+    // Wait a little bit before we loop around and do it again
+    delay(10);
+  }
+ // Serial.print("x");
+
+}
+
+
+void isr1() //When CLK  FALLING READ DAT
+{
+       Serial.println(50);  
+       //delay(50);
+
+ if  (digitalRead(dat)) // When DAT = HIGH IS FORWARD
+   {
+    hue = hue + 5;
+    delay(20);
+   }
+ else                   // When DAT = LOW IS BackRote
+   {
+    hue = hue - 5;
+    delay(20);
+   }
+    hue = (hue+179) % 179;
+}
+
+void isr2(){
+  //Serial.println(75);  
+  on = !(on);
+  delay(20);
+}
